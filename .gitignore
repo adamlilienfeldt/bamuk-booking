@@ -1,0 +1,5 @@
+node_modules/
+bookings.db
+bookings.db-wal
+bookings.db-shm
+.DS_Store

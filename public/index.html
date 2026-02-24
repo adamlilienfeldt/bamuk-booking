@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking af elevafdelingen på BAMUK</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Lokalebooking</h1>
+
+    <div class="day-selector" id="daySelector"></div>
+
+    <div class="slot-grid" id="slotGrid"></div>
+  </div>
+
+  <!-- Booking Modal -->
+  <div class="modal-overlay" id="bookingModal">
+    <div class="modal">
+      <h2>Book en tid</h2>
+      <p id="bookingSlotLabel"></p>
+      <form id="bookingForm">
+        <label for="nameInput">Dit navn</label>
+        <input type="text" id="nameInput" placeholder="Indtast dit navn" required autocomplete="off">
+
+        <label for="durationSelect">Varighed</label>
+        <select id="durationSelect">
+          <option value="1">30 minutter</option>
+          <option value="2">1 time</option>
+          <option value="3">1,5 timer</option>
+          <option value="4">2 timer</option>
+          <option value="5">2,5 timer</option>
+          <option value="6">3 timer</option>
+        </select>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" id="cancelBookingBtn">Annuller</button>
+          <button type="submit" class="btn btn-confirm">Book</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cancel Confirmation Modal -->
+  <div class="modal-overlay" id="cancelModal">
+    <div class="modal">
+      <h2>Annuller booking</h2>
+      <p id="cancelLabel"></p>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" id="cancelNoBtn">Nej, behold</button>
+        <button class="btn btn-danger" id="cancelYesBtn">Ja, annuller</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -5,8 +5,8 @@ const db = require('./database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Set to false to disable cancellation of bookings
-const ALLOW_CANCEL = false;
+// Set ALLOW_CANCEL=true env var to enable user cancellation of bookings
+const ALLOW_CANCEL = process.env.ALLOW_CANCEL === 'true';
 
 // Admin password — change this to your own password
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'bamuk2026';

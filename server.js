@@ -8,6 +8,9 @@ const PORT = process.env.PORT || 3000;
 // Set to false to disable cancellation of bookings
 const ALLOW_CANCEL = false;
 
+// Admin password — change this to your own password
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'bamuk2026';
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -35,6 +38,17 @@ function isDateInRange(dateStr) {
   maxDate.setDate(maxDate.getDate() + 6);
   return target >= today && target <= maxDate;
 }
+
+// Admin auth middleware
+function requireAdmin(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ') || auth.slice(7) !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Forkert adgangskode.' });
+  }
+  next();
+}
+
+// --- Public API ---
 
 // GET /api/settings
 app.get('/api/settings', (req, res) => {
@@ -92,6 +106,45 @@ app.delete('/api/bookings/group/:groupId', (req, res) => {
   if (!ALLOW_CANCEL) {
     return res.status(403).json({ error: 'Annullering er deaktiveret.' });
   }
+  const { groupId } = req.params;
+  const deleted = db.deleteBookingGroup(groupId);
+  if (!deleted) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+  res.json({ success: true });
+});
+
+// --- Admin API ---
+
+// POST /api/admin/login — validate password
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Forkert adgangskode.' });
+  }
+  res.json({ success: true });
+});
+
+// GET /api/admin/bookings — all bookings, optional date range
+app.get('/api/admin/bookings', requireAdmin, (req, res) => {
+  const { from, to } = req.query;
+  let bookings;
+  if (from && to) {
+    bookings = db.getBookingsByDateRange(from, to);
+  } else {
+    bookings = db.getAllBookings();
+  }
+  res.json(bookings);
+});
+
+// GET /api/admin/stats — aggregated statistics
+app.get('/api/admin/stats', requireAdmin, (req, res) => {
+  const stats = db.getStats();
+  res.json(stats);
+});
+
+// DELETE /api/admin/bookings/group/:groupId — admin delete (bypasses ALLOW_CANCEL)
+app.delete('/api/admin/bookings/group/:groupId', requireAdmin, (req, res) => {
   const { groupId } = req.params;
   const deleted = db.deleteBookingGroup(groupId);
   if (!deleted) {

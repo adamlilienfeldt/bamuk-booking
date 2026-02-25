@@ -1,0 +1,239 @@
+.admin-container {
+  max-width: 700px;
+}
+
+/* Login */
+.login-screen {
+  max-width: 320px;
+  margin: 60px auto;
+}
+
+.login-screen label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: #54595F;
+}
+
+.login-screen input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.login-screen input:focus {
+  border-color: #003DA5;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 0;
+}
+
+.tab {
+  padding: 10px 18px;
+  border: none;
+  background: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #888;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+}
+
+.tab:hover {
+  color: #333;
+}
+
+.tab.active {
+  color: #003DA5;
+  border-bottom-color: #003DA5;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Stat cards */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-card .stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #003DA5;
+}
+
+.stat-card .stat-label {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+.stat-section {
+  margin-bottom: 24px;
+}
+
+.stat-section h3 {
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+  color: #54595F;
+}
+
+/* Bar chart */
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar-label {
+  width: 45px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.bar-track {
+  flex: 1;
+  height: 22px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: #003DA5;
+  border-radius: 6px;
+  min-width: 2px;
+  transition: width 0.3s;
+}
+
+.bar-count {
+  width: 30px;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* Tables */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 2px solid #e0e0e0;
+  color: #888;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.admin-table td {
+  padding: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.admin-table tr:hover td {
+  background: #f8f9fa;
+}
+
+.btn-delete {
+  background: none;
+  border: 1px solid #e53935;
+  color: #e53935;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-delete:hover {
+  background: #e53935;
+  color: #fff;
+}
+
+/* Filter bar */
+.filter-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-bar label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.filter-bar input[type="date"] {
+  display: block;
+  padding: 6px 8px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+}
+
+.empty-msg {
+  text-align: center;
+  color: #aaa;
+  padding: 30px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 500px) {
+  .stat-cards {
+    grid-template-columns: 1fr;
+  }
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

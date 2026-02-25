@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Lokalebooking</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="container admin-container">
+    <h1>Admin</h1>
+
+    <!-- Login -->
+    <div id="loginScreen" class="login-screen">
+      <form id="loginForm">
+        <label for="passwordInput">Adgangskode</label>
+        <input type="password" id="passwordInput" placeholder="Indtast adgangskode" required autocomplete="off">
+        <button type="submit" class="btn btn-confirm" style="width:100%;margin-top:12px;">Log ind</button>
+      </form>
+    </div>
+
+    <!-- Admin panel (hidden until logged in) -->
+    <div id="adminPanel" style="display:none;">
+      <div class="tabs">
+        <button class="tab active" data-tab="stats">Oversigt</button>
+        <button class="tab" data-tab="bookings">Bookinger</button>
+        <button class="tab" data-tab="history">Historik</button>
+      </div>
+
+      <!-- Stats tab -->
+      <div class="tab-content active" id="tab-stats">
+        <div class="stat-cards" id="statCards"></div>
+        <div class="stat-section">
+          <h3>Top bookere</h3>
+          <table class="admin-table" id="topBookersTable">
+            <thead><tr><th>Navn</th><th>Antal</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="stat-section">
+          <h3>Travleste dage</h3>
+          <div id="busiestDays" class="bar-chart"></div>
+        </div>
+        <div class="stat-section">
+          <h3>Travleste tidspunkter</h3>
+          <div id="busiestSlots" class="bar-chart"></div>
+        </div>
+      </div>
+
+      <!-- Bookings tab -->
+      <div class="tab-content" id="tab-bookings">
+        <div class="filter-bar">
+          <label>Fra <input type="date" id="filterFrom"></label>
+          <label>Til <input type="date" id="filterTo"></label>
+          <button class="btn btn-confirm btn-sm" id="filterBtn">Filtrer</button>
+          <button class="btn btn-cancel btn-sm" id="clearFilterBtn">Nulstil</button>
+        </div>
+        <table class="admin-table" id="bookingsTable">
+          <thead><tr><th>Dato</th><th>Tid</th><th>Navn</th><th>Oprettet</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="empty-msg" id="noBookings" style="display:none;">Ingen bookinger fundet.</p>
+      </div>
+
+      <!-- History tab -->
+      <div class="tab-content" id="tab-history">
+        <table class="admin-table" id="historyTable">
+          <thead><tr><th>Dato</th><th>Tid</th><th>Navn</th><th>Oprettet</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="empty-msg" id="noHistory" style="display:none;">Ingen historik fundet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete confirmation modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+      <h2>Slet booking</h2>
+      <p id="deleteLabel"></p>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" id="deleteNoBtn">Annuller</button>
+        <button class="btn btn-danger" id="deleteYesBtn">Slet</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

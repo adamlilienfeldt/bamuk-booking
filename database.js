@@ -14,26 +14,39 @@ db.exec(`
     date TEXT NOT NULL,
     time_slot TEXT NOT NULL,
     name TEXT NOT NULL,
+    email TEXT,
+    cancel_token TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     UNIQUE(date, time_slot)
   )
 `);
 
+try { db.exec('ALTER TABLE bookings ADD COLUMN email TEXT'); } catch (e) { /* already exists */ }
+try { db.exec('ALTER TABLE bookings ADD COLUMN cancel_token TEXT'); } catch (e) { /* already exists */ }
+
 const getBookingsByDate = db.prepare(
-  'SELECT id, group_id, date, time_slot, name FROM bookings WHERE date = ?'
+  'SELECT id, group_id, date, time_slot FROM bookings WHERE date = ?'
+);
+
+const getGroupName = db.prepare(
+  'SELECT name FROM bookings WHERE group_id = ? LIMIT 1'
+);
+
+const getGroupByCancelToken = db.prepare(
+  'SELECT group_id, date, time_slot, name FROM bookings WHERE cancel_token = ? ORDER BY time_slot ASC'
 );
 
 const insertBooking = db.prepare(
-  'INSERT INTO bookings (group_id, date, time_slot, name) VALUES (?, ?, ?, ?)'
+  'INSERT INTO bookings (group_id, date, time_slot, name, email, cancel_token) VALUES (?, ?, ?, ?, ?, ?)'
 );
 
 const deleteByGroupId = db.prepare(
   'DELETE FROM bookings WHERE group_id = ?'
 );
 
-const createBookingGroup = db.transaction((groupId, date, slots, name) => {
+const createBookingGroup = db.transaction((groupId, date, slots, name, email, cancelToken) => {
   for (const slot of slots) {
-    insertBooking.run(groupId, date, slot, name);
+    insertBooking.run(groupId, date, slot, name, email || null, cancelToken);
   }
 });
 
@@ -84,14 +97,38 @@ module.exports = {
   getBookingsByDate(date) {
     return getBookingsByDate.all(date);
   },
-  createBooking(date, slots, name) {
+  createBooking(date, slots, name, email) {
     const groupId = crypto.randomUUID();
-    createBookingGroup(groupId, date, slots, name);
-    return { group_id: groupId, date, slots, name };
+    const cancelToken = crypto.randomUUID();
+    createBookingGroup(groupId, date, slots, name, email, cancelToken);
+    return { group_id: groupId, date, slots, name, cancel_token: cancelToken };
   },
   deleteBookingGroup(groupId) {
     const result = deleteByGroupId.run(groupId);
     return result.changes > 0;
+  },
+  deleteBookingGroupByName(groupId, name) {
+    const row = getGroupName.get(groupId);
+    if (!row) return 'not_found';
+    if (row.name.toLowerCase() !== name.toLowerCase()) return 'wrong_name';
+    deleteByGroupId.run(groupId);
+    return 'deleted';
+  },
+  getGroupByCancelToken(token) {
+    const rows = getGroupByCancelToken.all(token);
+    if (!rows.length) return null;
+    return {
+      group_id: rows[0].group_id,
+      date: rows[0].date,
+      name: rows[0].name,
+      slots: rows.map(r => r.time_slot)
+    };
+  },
+  deleteBookingGroupByToken(token) {
+    const rows = getGroupByCancelToken.all(token);
+    if (!rows.length) return false;
+    deleteByGroupId.run(rows[0].group_id);
+    return true;
   },
 
   // Admin methods

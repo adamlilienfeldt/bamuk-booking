@@ -20,12 +20,18 @@
   const cancelLabel = document.getElementById('cancelLabel');
   const cancelBookingBtn = document.getElementById('cancelBookingBtn');
   const cancelNoBtn = document.getElementById('cancelNoBtn');
-  const cancelYesBtn = document.getElementById('cancelYesBtn');
+  const cancelForm = document.getElementById('cancelForm');
+  const cancelNameInput = document.getElementById('cancelNameInput');
+  const emailInput = document.getElementById('emailInput');
+  const tokenCancelModal = document.getElementById('tokenCancelModal');
+  const tokenCancelLabel = document.getElementById('tokenCancelLabel');
+  const tokenCancelNoBtn = document.getElementById('tokenCancelNoBtn');
+  const tokenCancelYesBtn = document.getElementById('tokenCancelYesBtn');
   const toast = document.getElementById('toast');
 
   let pendingSlot = null;
   let pendingCancelGroupId = null;
-  let allowCancel = true;
+  let pendingCancelToken = null;
 
   // --- Helpers ---
 
@@ -54,7 +60,7 @@
     const groups = {};
     for (const b of bookings) {
       if (!groups[b.group_id]) {
-        groups[b.group_id] = { group_id: b.group_id, name: b.name, slots: [] };
+        groups[b.group_id] = { group_id: b.group_id, slots: [] };
       }
       groups[b.group_id].slots.push(b.time_slot);
     }
@@ -134,13 +140,11 @@
 
         const contentSpan = document.createElement('span');
         contentSpan.className = 'slot-content';
-        contentSpan.textContent = group.name;
+        contentSpan.textContent = 'Optaget';
 
         div.appendChild(timeSpan);
         div.appendChild(contentSpan);
-        if (allowCancel) {
-          div.addEventListener('click', () => openCancelModal(group));
-        }
+        div.addEventListener('click', () => openCancelModal(group));
         slotGrid.appendChild(div);
 
         // Mark all slots in this group as rendered
@@ -184,11 +188,11 @@
     }
   }
 
-  async function createBooking(date, slots, name) {
+  async function createBooking(date, slots, name, email) {
     const res = await fetch('/api/bookings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, slots, name })
+      body: JSON.stringify({ date, slots, name, email: email || undefined })
     });
     if (!res.ok) {
       const data = await res.json();
@@ -197,8 +201,12 @@
     return res.json();
   }
 
-  async function deleteBookingGroup(groupId) {
-    const res = await fetch(`/api/bookings/group/${groupId}`, { method: 'DELETE' });
+  async function deleteBookingGroup(groupId, name) {
+    const res = await fetch(`/api/bookings/group/${groupId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
     if (!res.ok) {
       const data = await res.json();
       throw new Error(data.error || 'Annullering mislykkedes');
@@ -231,6 +239,7 @@
     durationSelect.value = '1';
 
     nameInput.value = localStorage.getItem('bookingName') || '';
+    emailInput.value = localStorage.getItem('bookingEmail') || '';
     bookingModal.classList.add('show');
     nameInput.focus();
   }
@@ -247,13 +256,16 @@
     const startSlot = group.slots[0];
     const lastSlot = group.slots[group.slots.length - 1];
     const endTime = endTimeForSlot(lastSlot);
-    cancelLabel.textContent = `Annuller booking af "${group.name}" kl. ${startSlot} – ${endTime}?`;
+    cancelLabel.textContent = `Booking kl. ${startSlot} – ${endTime}`;
+    cancelNameInput.value = localStorage.getItem('bookingName') || '';
     cancelModal.classList.add('show');
+    cancelNameInput.focus();
   }
 
   function closeCancelModal() {
     cancelModal.classList.remove('show');
     pendingCancelGroupId = null;
+    cancelNameInput.value = '';
   }
 
   // --- Events ---
@@ -274,15 +286,17 @@
     e.preventDefault();
     const name = nameInput.value.trim();
     if (!name) return;
+    const email = emailInput.value.trim();
 
     localStorage.setItem('bookingName', name);
+    if (email) localStorage.setItem('bookingEmail', email);
 
     const slotIdx = SLOTS.indexOf(pendingSlot);
     const count = parseInt(durationSelect.value);
     const slotsToBook = SLOTS.slice(slotIdx, slotIdx + count);
 
     try {
-      await createBooking(selectedDate, slotsToBook, name);
+      await createBooking(selectedDate, slotsToBook, name, email);
       closeBookingModal();
       await loadBookings();
       showToast(`Booket ${count > 1 ? count + ' tider' : '1 tid'} for ${name}`);
@@ -291,10 +305,62 @@
     }
   });
 
-  cancelYesBtn.addEventListener('click', async () => {
+  cancelForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = cancelNameInput.value.trim();
+    if (!name) return;
     try {
-      await deleteBookingGroup(pendingCancelGroupId);
+      await deleteBookingGroup(pendingCancelGroupId, name);
       closeCancelModal();
+      await loadBookings();
+      showToast('Booking annulleret');
+    } catch (err) {
+      showToast(err.message);
+    }
+  });
+
+  // --- Token cancel (via email link) ---
+
+  async function checkCancelToken() {
+    const token = new URLSearchParams(window.location.search).get('cancel');
+    if (!token) return;
+
+    // Clean URL without reloading
+    history.replaceState(null, '', window.location.pathname);
+
+    try {
+      const res = await fetch(`/api/cancel/${token}`);
+      if (!res.ok) { showToast('Booking ikke fundet.'); return; }
+      const group = await res.json();
+      const startSlot = group.slots[0];
+      const endTime = endTimeForSlot(group.slots[group.slots.length - 1]);
+      const [year, month, day] = group.date.split('-');
+      tokenCancelLabel.textContent = `${group.name} – ${day}/${month}/${year} kl. ${startSlot} – ${endTime}`;
+      pendingCancelToken = token;
+      tokenCancelModal.classList.add('show');
+    } catch (err) {
+      showToast('Kunne ikke hente booking.');
+    }
+  }
+
+  tokenCancelNoBtn.addEventListener('click', () => {
+    tokenCancelModal.classList.remove('show');
+    pendingCancelToken = null;
+  });
+
+  tokenCancelModal.addEventListener('click', (e) => {
+    if (e.target === tokenCancelModal) {
+      tokenCancelModal.classList.remove('show');
+      pendingCancelToken = null;
+    }
+  });
+
+  tokenCancelYesBtn.addEventListener('click', async () => {
+    try {
+      const res = await fetch(`/api/cancel/${pendingCancelToken}`, { method: 'DELETE' });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+      tokenCancelModal.classList.remove('show');
+      pendingCancelToken = null;
       await loadBookings();
       showToast('Booking annulleret');
     } catch (err) {
@@ -304,14 +370,10 @@
 
   // --- Init ---
 
-  async function init() {
-    try {
-      const res = await fetch('/api/settings');
-      const settings = await res.json();
-      allowCancel = settings.allowCancel;
-    } catch (err) { /* default to true */ }
+  function init() {
     renderDays();
     loadBookings();
+    checkCancelToken();
   }
 
   init();

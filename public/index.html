@@ -24,6 +24,9 @@
         <label for="nameInput">Dit navn</label>
         <input type="text" id="nameInput" placeholder="Indtast dit navn" required autocomplete="off">
 
+        <label for="emailInput">Din e-mail</label>
+        <input type="email" id="emailInput" placeholder="Modtag bekræftelse på mail" required autocomplete="off">
+
         <label for="durationSelect">Varighed</label>
         <select id="durationSelect">
           <option value="1">30 minutter</option>
@@ -47,9 +50,25 @@
     <div class="modal">
       <h2>Annuller booking</h2>
       <p id="cancelLabel"></p>
+      <form id="cancelForm">
+        <label for="cancelNameInput">Indtast dit navn for at bekræfte</label>
+        <input type="text" id="cancelNameInput" placeholder="Dit navn" required autocomplete="off">
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" id="cancelNoBtn">Nej, behold</button>
+          <button type="submit" class="btn btn-danger">Ja, annuller</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Token Cancel Modal -->
+  <div class="modal-overlay" id="tokenCancelModal">
+    <div class="modal">
+      <h2>Annuller booking</h2>
+      <p id="tokenCancelLabel"></p>
       <div class="modal-actions">
-        <button class="btn btn-cancel" id="cancelNoBtn">Nej, behold</button>
-        <button class="btn btn-danger" id="cancelYesBtn">Ja, annuller</button>
+        <button class="btn btn-cancel" id="tokenCancelNoBtn">Nej, behold</button>
+        <button class="btn btn-danger" id="tokenCancelYesBtn">Ja, annuller</button>
       </div>
     </div>
   </div>

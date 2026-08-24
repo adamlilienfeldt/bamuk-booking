@@ -1,114 +1,89 @@
 # Resend e-mail opsætning — DNS i SiteGround
 
-Formålet: få bookingbekræftelser sendt fra `booking@send.bamuk.dk`.
+Formål: bookingbekræftelser skal sendes fra `booking@send.bamuk.dk`.
 
 **Vigtigt:** Vi bruger subdomænet `send.bamuk.dk` — ikke `bamuk.dk`.
-Roddomænet har allerede en fungerende SPF-record til skolens almindelige mail
-via SiteGround. Ændrer man den, risikerer man at bryde al personalemail.
-Lad rodens `MX` og `TXT`-records være i fred.
+Roddomænet har allerede en fungerende SPF-record til skolens almindelige
+mail via SiteGround. Ændrer man den, risikerer man at bryde al personalemail.
 
-Nuværende (skal IKKE røres):
+Disse to skal IKKE røres:
 
 ```
-MX   bamuk.dk        0 bamuk.dk
-TXT  bamuk.dk        v=spf1 +a +mx +a:es89.siteground.eu include:bamuk.dk.spf.auto.dnssmarthost.net ~all
+MX   bamuk.dk    0 bamuk.dk
+TXT  bamuk.dk    v=spf1 +a +mx +a:es89.siteground.eu include:bamuk.dk.spf.auto.dnssmarthost.net ~all
 ```
 
 ---
 
-## 1. Opret domænet i Resend
+## De tre records
 
-1. Log ind på https://resend.com → **Domains** → **Add Domain**
-2. Domæne: `send.bamuk.dk`
-3. Region: **EU (Ireland)** — tættest på og holder data i EU
-4. Resend viser nu tre records: én **DKIM** og to under **SPF**
+**Site Tools → Domain → DNS Zone Editor**
+(nameservere er `ns1/ns2.siteground.net`)
 
----
+Resend viser navnene **relativt til zonen** — præcis det format SiteGround
+vil have. Skriv dem af som de står, uden `.bamuk.dk` til sidst.
 
-## 2. Indsæt records i SiteGround
-
-**Site Tools → Domain → DNS Zone Editor** (nameservere er `ns1/ns2.siteground.net`)
-
-### ⚠️ Den fejl alle laver
-
-SiteGrounds **Name/Host**-felt er *relativt til zonen*. Resend viser det fulde
-navn. Skriver du det fulde navn, laver SiteGround `send.bamuk.dk.bamuk.dk`,
-og verifikationen bliver aldrig grøn.
-
-| Resend viser | Skriv i SiteGround |
-|---|---|
-| `send.bamuk.dk` | `send` |
-| `resend._domainkey.send.bamuk.dk` | `resend._domainkey.send` |
-
-SiteGround viser `.bamuk.dk` i grå tekst ved siden af feltet. Ser du det,
-er du i det relative format — skriv kun venstre del.
-
-### De tre records
-
-Hent de præcise værdier fra Resend-dashboardet. Nedenstående er formatet:
-
-**1. DKIM (TXT)**
+### 1. DKIM — domæneverifikation
 
 | Felt | Værdi |
 |---|---|
 | Type | `TXT` |
 | Name | `resend._domainkey.send` |
-| Value | `p=MIGfMA0GCSq...` (lang streng — kopiér HELE den fra Resend) |
+| TTL | Auto / standard |
 
-**2. SPF — bounce-håndtering (MX)**
+Content (ÉN linje, ingen mellemrum eller linjeskift):
 
-| Felt | Værdi |
-|---|---|
-| Type | `MX` |
-| Name | `send` |
-| Value | `feedback-smtp.eu-west-1.amazonses.com` |
-| Priority | `10` |
+```
+p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDANXq/id9A+6B12lwBxiERd052c4mdHQc4Lykm0oJMA7jg18kwN8ojUZOraWg1tJiOnx/xHWajGf4n3maDZqEcMRbCDD1+6XsPM8V1SpZzTAhCvuR6IdwuIsr9l5uEk/5Z4YpbX7r5FZ1GKpK4raJx8LyKSxF/TywNw5A98zwNwwIDAQAB
+```
 
-**3. SPF — afsendertilladelse (TXT)**
+### 2. SPF — afsender
 
-| Felt | Værdi |
-|---|---|
-| Type | `TXT` |
-| Name | `send` |
-| Value | `v=spf1 include:amazonses.com ~all` |
+| Type | Name | Content |
+|---|---|---|
+| `CNAME` | `rsend.send` | `rsend.forge.rmta.net` |
+
+### 3. SPF — bounce-håndtering
+
+| Type | Name | Content |
+|---|---|---|
+| `CNAME` | `send.send` | `send.forge.rmta.net` |
+
+> `rsend` med ét `e` i record nr. 2 er ikke en tastefejl — det hedder
+> sådan hos Resend. Skriv præcis som ovenfor.
 
 ### Detaljer der driller
 
-- **Ingen anførselstegn** om TXT-værdier — SiteGround tilføjer dem selv
-- **MX skal have priority** (`10`), ellers afvises den
-- DKIM-værdien er lang og må ikke få linjeskift eller mellemrum indsat
-- Kopiér altid fra Resend med kopiér-knappen, ikke ved at markere med musen
+- **Ingen anførselstegn** om TXT-værdien — SiteGround tilføjer dem selv
+- DKIM-nøglen må ikke brydes over flere linjer
+- CNAME-værdier: nogle DNS-paneler kræver et afsluttende punktum
+  (`rsend.forge.rmta.net.`). Virker det ikke uden, så prøv med.
+- Kopiér altid med kopiér-knappen i Resend, ikke ved at markere med musen
 
 ---
 
-## 3. Verificér
+## Verificér
 
-1. Tilbage i Resend → **Verify DNS Records**
-2. Propagering tager typisk få minutter, men kan tage timer
+1. Resend → **I've already added the records**
+2. Typisk grønt inden for 15 minutter; DNS kan tage op til 72 timer
 3. Tjek undervejs fra terminal:
 
 ```sh
-dig +short TXT resend._domainkey.send.bamuk.dk
-dig +short TXT send.bamuk.dk
-dig +short MX  send.bamuk.dk
+dig +short TXT   resend._domainkey.send.bamuk.dk
+dig +short CNAME rsend.send.bamuk.dk
+dig +short CNAME send.send.bamuk.dk
 ```
 
-Kommer der tomme svar, er recorden enten ikke propageret endnu eller
-oprettet med forkert navn (se fejlen ovenfor).
+Tomme svar = ikke propageret endnu, eller forkert navn.
 
 ---
 
-## 4. Sidste skridt i appen
+## Sidste skridt i appen
 
-Når Resend viser **Verified**, skal afsenderadressen skiftes:
-
-```
-booking@bamuk.dk  →  booking@send.bamuk.dk
-```
-
-Den ligger allerede klar i `fly.toml` som `FROM_EMAIL`. Deploy med:
+Når Resend viser **Verified**:
 
 ```sh
+# skift FROM_EMAIL i fly.toml til booking@send.bamuk.dk
 fly deploy --app bamuk-booking
 ```
 
@@ -118,14 +93,19 @@ Ingen kodeændring nødvendig — `FROM_EMAIL` læses fra miljøet i `server.js`
 
 ## Fejlsøgning
 
-Mail kommer ikke frem:
-
 ```sh
 fly logs --app bamuk-booking
 ```
 
-Kig efter `Email fejl:`. Appen fejler aldrig en booking på grund af mail —
+Kig efter `Email fejl:`. En booking fejler aldrig på grund af mail —
 bookingen gemmes uanset hvad, kun bekræftelsen udebliver.
 
-Tjek også Resend-dashboardets **Logs**-fane; der står den præcise årsag
-til afviste sends.
+Resend-dashboardets **Logs**-fane viser den præcise årsag til afviste sends.
+
+---
+
+## Noter
+
+- **Enable Receiving** er slået fra i Resend. Det er med vilje — appen
+  sender kun, den modtager ikke.
+- Region er **EU (Ireland)**, så afsendelse og data holdes i EU.

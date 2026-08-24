@@ -96,6 +96,13 @@
       `<tr><td>${esc(b.name)}</td><td>${b.booking_count}</td></tr>`
     ).join('');
 
+    // Usage per month (perpetual, survives anonymisation)
+    renderBarChart('byMonth', stats.byMonth.map(m => ({
+      label: m.month, count: m.booking_count, suffix: `${m.hours} t`
+    })));
+    document.getElementById('retentionNote').textContent =
+      `Navne og e-mails slettes automatisk efter ${stats.retentionDays} dage. Brugstal bevares.`;
+
     // Busiest days
     renderBarChart('busiestDays', stats.busiestDays.map(d => ({ label: d.day_name, count: d.booking_count })));
 
@@ -111,7 +118,7 @@
       <div class="bar-row">
         <span class="bar-label">${esc(i.label)}</span>
         <div class="bar-track"><div class="bar-fill" style="width:${(i.count / max * 100).toFixed(1)}%"></div></div>
-        <span class="bar-count">${i.count}</span>
+        <span class="bar-count">${i.count}${i.suffix ? ' / ' + esc(i.suffix) : ''}</span>
       </div>
     `).join('');
   }
@@ -170,7 +177,7 @@
       <tr>
         <td>${g.date}</td>
         <td>${slotRangeStr(g.slots)}</td>
-        <td>${esc(g.name)}</td>
+        <td>${g.name ? esc(g.name) : '<em>anonymiseret</em>'}</td>
         <td>${g.created_at ? g.created_at.slice(0, 16).replace('T', ' ') : ''}</td>
         ${showDelete ? `<td><button class="btn-delete" data-group="${g.group_id}" data-name="${esc(g.name)}" data-time="${slotRangeStr(g.slots)}" data-date="${g.date}">Slet</button></td>` : ''}
       </tr>

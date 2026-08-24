@@ -1,0 +1,8 @@
+node_modules
+.git
+.claude
+bookings.db
+bookings.db-wal
+bookings.db-shm
+.DS_Store
+test.js

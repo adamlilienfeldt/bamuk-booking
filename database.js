@@ -2,7 +2,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const crypto = require('crypto');
 
-const db = new Database(path.join(__dirname, 'bookings.db'));
+const db = new Database(process.env.DB_PATH || path.join(__dirname, 'bookings.db'));
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
@@ -68,7 +68,7 @@ const bookingGroupsInRange = db.prepare(
 );
 
 const topBookers = db.prepare(
-  'SELECT name, COUNT(DISTINCT group_id) as booking_count FROM bookings GROUP BY name ORDER BY booking_count DESC LIMIT 10'
+  "SELECT name, COUNT(DISTINCT group_id) as booking_count FROM bookings WHERE name != '' GROUP BY name ORDER BY booking_count DESC LIMIT 10"
 );
 
 const busiestDays = db.prepare(`
@@ -91,6 +91,25 @@ const busiestDays = db.prepare(`
 
 const busiestSlots = db.prepare(
   'SELECT time_slot, COUNT(DISTINCT group_id) as booking_count FROM bookings GROUP BY time_slot ORDER BY booking_count DESC LIMIT 10'
+);
+
+// Perpetual usage history (survives anonymisation)
+const bookingsByMonth = db.prepare(`
+  SELECT
+    substr(date, 1, 7) as month,
+    COUNT(DISTINCT group_id) as booking_count,
+    COUNT(*) / 2.0 as hours
+  FROM bookings
+  GROUP BY month
+  ORDER BY month ASC
+`);
+
+// Strip personal data from bookings older than RETENTION_DAYS.
+// Rows are kept (never deleted) so usage statistics stay complete forever.
+const RETENTION_DAYS = Number(process.env.RETENTION_DAYS) || 30;
+const anonymizeOldStmt = db.prepare(
+  `UPDATE bookings SET name = '', email = NULL, cancel_token = NULL
+   WHERE date < date('now', ?) AND name != ''`
 );
 
 module.exports = {
@@ -131,6 +150,10 @@ module.exports = {
     return true;
   },
 
+  anonymizeOldBookings() {
+    return anonymizeOldStmt.run(`-${RETENTION_DAYS} day`).changes;
+  },
+
   // Admin methods
   getAllBookings() {
     return getAllBookingsStmt.all();
@@ -157,7 +180,9 @@ module.exports = {
       thisMonth: bookingGroupsInRange.get(monthStartStr, today).count,
       topBookers: topBookers.all(),
       busiestDays: busiestDays.all(),
-      busiestSlots: busiestSlots.all()
+      busiestSlots: busiestSlots.all(),
+      byMonth: bookingsByMonth.all(),
+      retentionDays: RETENTION_DAYS
     };
   }
 };

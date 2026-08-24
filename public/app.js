@@ -124,12 +124,13 @@
       if (booking) {
         // Booked — render as a group block
         const group = groups[booking.group_id];
+        const isBlocked = booking.group_id === 'blocked';
         const startSlot = group.slots[0];
         const lastSlot = group.slots[group.slots.length - 1];
         const endTime = endTimeForSlot(lastSlot);
 
         const div = document.createElement('div');
-        div.className = 'slot booked';
+        div.className = isBlocked ? 'slot blocked' : 'slot booked';
         if (group.slots.length > 1) {
           div.style.minHeight = (group.slots.length * 44) + 'px';
         }
@@ -140,11 +141,11 @@
 
         const contentSpan = document.createElement('span');
         contentSpan.className = 'slot-content';
-        contentSpan.textContent = 'Optaget';
+        contentSpan.textContent = isBlocked ? 'Reserveret' : 'Optaget';
 
         div.appendChild(timeSpan);
         div.appendChild(contentSpan);
-        div.addEventListener('click', () => openCancelModal(group));
+        if (!isBlocked) div.addEventListener('click', () => openCancelModal(group));
         slotGrid.appendChild(div);
 
         // Mark all slots in this group as rendered

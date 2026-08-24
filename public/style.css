@@ -255,3 +255,15 @@ h1 {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
+
+.slot.blocked {
+  background: #EFEFF0;
+  border: 1px solid #ddd;
+  cursor: default;
+}
+
+.slot.blocked .slot-content,
+.slot.blocked .slot-time {
+  color: #8a8f94;
+  font-weight: 600;
+}

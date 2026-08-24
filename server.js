@@ -23,6 +23,18 @@ for (let h = 7; h <= 22; h++) {
   if (h < 23) VALID_SLOTS.push(`${String(h).padStart(2, '0')}:30`);
 }
 
+// Recurring unavailable periods: weekday (0=Sun), [from, to)
+const RECURRING_BLOCKS = [
+  { weekday: 4, from: '15:00', to: '20:00', label: 'Reserveret' }
+];
+
+function blockedSlots(dateStr) {
+  const weekday = new Date(dateStr + 'T00:00:00').getDay();
+  return RECURRING_BLOCKS
+    .filter(b => b.weekday === weekday)
+    .flatMap(b => VALID_SLOTS.filter(s => s >= b.from && s < b.to));
+}
+
 function todayStr() {
   const now = new Date();
   return now.toISOString().slice(0, 10);
@@ -65,7 +77,10 @@ app.get('/api/bookings', (req, res) => {
     return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
   }
   const bookings = db.getBookingsByDate(date);
-  res.json(bookings);
+  const blocked = blockedSlots(date).map(slot => ({
+    id: null, group_id: 'blocked', date, time_slot: slot
+  }));
+  res.json(bookings.concat(blocked));
 });
 
 // POST /api/bookings
@@ -91,6 +106,10 @@ app.post('/api/bookings', (req, res) => {
   }
   if (date === todayStr() && slots[0] <= currentTimeStr()) {
     return res.status(400).json({ error: 'Cannot book a slot in the past.' });
+  }
+  const blocked = blockedSlots(date);
+  if (slots.some(s => blocked.includes(s))) {
+    return res.status(409).json({ error: 'Tidsrummet er reserveret og kan ikke bookes.' });
   }
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -194,6 +213,14 @@ app.delete('/api/admin/bookings/group/:groupId', requireAdmin, (req, res) => {
   }
   res.json({ success: true });
 });
+
+// Strip personal data from old bookings; keep the rows for perpetual usage stats.
+function runRetention() {
+  const n = db.anonymizeOldBookings();
+  if (n) console.log(`Retention: anonymiserede ${n} gamle booking-rækker`);
+}
+runRetention();
+setInterval(runRetention, 24 * 60 * 60 * 1000).unref();
 
 app.listen(PORT, () => {
   console.log(`Room booking server running at http://localhost:${PORT}`);

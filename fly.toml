@@ -1,0 +1,27 @@
+app = "bamuk-booking"
+primary_region = "ams"
+
+[build]
+
+[env]
+  PORT = "3000"
+  DB_PATH = "/data/bookings.db"
+  BASE_URL = "https://bamuk-booking.fly.dev"
+  # Skift til booking@send.bamuk.dk når Resend har verificeret domænet — se SITEGROUND-DNS.md
+  FROM_EMAIL = "booking@bamuk.dk"
+
+[[mounts]]
+  source = "bamuk_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # SQLite on a single volume: exactly one machine may write.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

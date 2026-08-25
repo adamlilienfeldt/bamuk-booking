@@ -6,9 +6,8 @@ primary_region = "ams"
 [env]
   PORT = "3000"
   DB_PATH = "/data/bookings.db"
-  BASE_URL = "https://bamuk-booking.fly.dev"
-  # Skift til booking@send.bamuk.dk når Resend har verificeret domænet — se SITEGROUND-DNS.md
-  FROM_EMAIL = "booking@bamuk.dk"
+  BASE_URL = "https://elevafdeling.bamuk.dk"
+  FROM_EMAIL = "booking@send.bamuk.dk"
 
 [[mounts]]
   source = "bamuk_data"

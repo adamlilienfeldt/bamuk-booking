@@ -14,7 +14,7 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'booking@bamuk.dk';
 const BASE_URL = process.env.BASE_URL || `http://localhost:${process.env.PORT || 3000}`;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // Valid time slots (07:00 to 22:30 in 30-min increments)
 const VALID_SLOTS = [];
